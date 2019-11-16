@@ -36,6 +36,10 @@
 *.eep
 *.elf
 *.hex
+
+# vim stuff
+*.swp
+
 # private stuff
 myWifiSettings.h
 mySettings.h
@@ -43,4 +47,3 @@ tmp/*
 doc/html
 doc/html/*
 libraries/*
-

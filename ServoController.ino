@@ -10,7 +10,9 @@
 
 // Version history
 // V0.10 : full functional initial version
-#define APP_VERSION "V0.10"
+// V0.11 : bug with deactivated AP and config data fixed
+//         preset button values now stored with "SAVE" in config page
+#define APP_VERSION "V0.11"
 
 /**
  * \file ServoControl.ino
@@ -26,22 +28,22 @@
  */
 
 /**
- * \mainpage ServoController ist ein Arduino WeMos D1 Mini Projekt zur Ansteuerung eines Modellflug-Servos 
+ * \mainpage ServoController ist ein Arduino WeMos D1 Mini Projekt zur Ansteuerung eines Modellflug-Servos
  *
  * \section intro_sec_de Übersicht
- * Benötigt wird lediglich ein WeMos D1 Mini (ESP8266), ein Servo-Buchsen Kabel, 
+ * Benötigt wird lediglich ein WeMos D1 Mini (ESP8266), ein Servo-Buchsen Kabel,
  * ein USB-Lade-Kabel USB-auf-Micro-USB
  * und eine kleine Power-Bank zur mobilen Nutzung in der Werkstatt.
  * Anstatt der Powerbank kann auch ein handeslübliches USB-Stecknetzteil benutzt werden.
- * Die USB-Ausgangsspannung ist 5V und sollte für alle handelsüblichen 
+ * Die USB-Ausgangsspannung ist 5V und sollte für alle handelsüblichen
  * RC-Servos problemlos funktionieren.
- * Das USB-auf-Micro-USB Kabel wird aufgetrennt und die +-Litzen mit dem +-Kabel des 
+ * Das USB-auf-Micro-USB Kabel wird aufgetrennt und die +-Litzen mit dem +-Kabel des
  * Servo-Buchsen-Kabels wieder zusammengelötet und mit Schrumpfschlauch isoliert.
  * Dasselbe macht man mit dem --Kabel.
  * Das Signalkabel, des Servo-Buchsen-Kabels wird mit dem D7 Port auf dem ESP8266 verlötet.
  * Damit sind die HW-Arbeiten schon beendet.
  * ![Übersicht](https://raw.githubusercontent.com/Pulsar07/ServoController/master/doc/img/SC_Uebersicht.png)
- * 
+ *
 * \subsection hardware_subsec_de_mk Mikrokontroller
  * Als Mikrokontroller wird der Wemos D1/ESP8266 benutzt, der ausreichende Rechenpower und
  * Speicherresourcen bietet und eine WLAN Schnittstelle hat. Auch dieser Mikrokontroller
@@ -55,11 +57,11 @@
  *
  * \section hmi_sec_de Anleitung
  * \subsection operation_subsec_de_sp Web-GUI
- * Die Bedienung am Web-GUI ist denkbar einfach. Die Servo-Position kann über zwei 
- * Eingabefelder prozentual oder als Impulsbreite gesteuert werden. Zusätzlich kann die Servoposition 
+ * Die Bedienung am Web-GUI ist denkbar einfach. Die Servo-Position kann über zwei
+ * Eingabefelder prozentual oder als Impulsbreite gesteuert werden. Zusätzlich kann die Servoposition
  * über ein Slider-Widget gesteuert werden.
- * Es sind für diverse Aufgaben noch 5 vordefinierte und einstellbare (Save) Positions-Buttons 
- * verfügbar.   
+ * Es sind für diverse Aufgaben noch 5 vordefinierte und einstellbare (Save) Positions-Buttons
+ * verfügbar.
  * ![Web-GUI](https://raw.githubusercontent.com/Pulsar07/ServoController/master/doc/img/SC_GUI.png)
  * \subsection hmi_subsec_de_ib Inbetriebnahme
  * * Stromversorgung
@@ -91,8 +93,6 @@ static unsigned long ourTriggerRestart = 0;
 const int SERVO_PIN = D7;
 Servo servo;
 static int16_t ourServoPos;
-#define STORED_POS_L 5
-static int ourStoredPos[STORED_POS_L] = { -100,-50, 0, +50, +100};
 
 ESP8266WebServer server(80);    // Server Port  hier einstellen
 
@@ -102,6 +102,13 @@ void initServo() {
   servo.attach(SERVO_PIN);
   ourServoPos = 1500; // start at mid position
   servo.writeMicroseconds(ourServoPos);
+
+  // check and reset servo preset values if not valid initialized
+  for (int i=0; i<CONFIG_SERVO_PRESET_L; i++) {
+    if (ourConfig.servoPresets[i] < -125 || ourConfig.servoPresets[i] > +125) {
+      ourConfig.servoPresets[i] = -100 + i*50;
+    }
+  }
 }
 
 void setup()
@@ -164,7 +171,7 @@ int16_t get_percent_value() {
 void set_pwm_value(int16_t aValue) {
   Serial.print(" set_pwm_value: ");
   showServoPos();
-  ourServoPos = aValue; 
+  ourServoPos = aValue;
 }
 
 void set_percent_value(int16_t aValue) {
@@ -179,16 +186,17 @@ int16_t get_pwm_value() {
 
 void storePosition(uint8_t aNum){
   Serial.print(" storePosition: ");
-  if (aNum < STORED_POS_L) {
-    ourStoredPos[aNum] = get_percent_value(); 
-    Serial.print(ourStoredPos[aNum]);
+  int servoPresets[CONFIG_SERVO_PRESET_L];
+  if (aNum < CONFIG_SERVO_PRESET_L) {
+    ourConfig.servoPresets[aNum] = get_percent_value();
+    Serial.print(ourConfig.servoPresets[aNum]);
   }
   Serial.println();
 }
 
 void loadPosition(uint8_t aNum) {
   Serial.print(" loadPosition: ");
-  if (aNum < STORED_POS_L) {
+  if (aNum < CONFIG_SERVO_PRESET_L) {
     set_percent_value(getPosition(aNum));
     Serial.print(getPosition(aNum));
   }
@@ -196,7 +204,7 @@ void loadPosition(uint8_t aNum) {
 }
 
 int16_t getPosition(uint8_t aNum) {
-  return aNum < STORED_POS_L ? ourStoredPos[aNum] : 0;
+  return aNum < CONFIG_SERVO_PRESET_L ? ourConfig.servoPresets[aNum] : 0;
 }
 
 
@@ -266,15 +274,15 @@ void setDataReq() {
   int htmlResponseCode=200; // OK
   if ( name == "id_pwm_setvalue") {
     set_pwm_value(value.toInt());
-    response += createDynValueResponse(name); 
+    response += createDynValueResponse(name);
   } else
   if ( name == "id_percent_setvalue") {
     set_percent_value(value.toInt());
-    response += createDynValueResponse(name); 
+    response += createDynValueResponse(name);
   } else
   if ( name == "id_pos_slider") {
     set_percent_value(value.toInt());
-    response += createDynValueResponse(name); 
+    response += createDynValueResponse(name);
   } else
   if ( name.startsWith("id_store_")) {
     int pos = name.substring(9).toInt();
@@ -284,7 +292,7 @@ void setDataReq() {
   if ( name.startsWith("cmd_load_")) {
     int pos = name.substring(9).toInt();
     loadPosition(pos-1);
-    response += createDynValueResponse(name); 
+    response += createDynValueResponse(name);
   } else
   if ( name == "id_apActive") {
     if (value == "true") {
@@ -375,7 +383,7 @@ void getDataReq() {
     if (argName.equals("id_wlanPasswd")) {
         response += argName + "=" + "************;";
     } else
-	if (argName.equals("id_apSsid")) {
+    if (argName.equals("id_apSsid")) {
         response += argName + "=" + ourConfig.apSsid + ";";
     } else
     if (argName.equals("id_apPasswd")) {
@@ -508,7 +516,7 @@ void setupWiFi() {
     Serial.println(ourConfig.wlanSsid);
     WiFi.mode(WIFI_AP) ; // client mode only
   }
-  if (ourConfig.apIsActive) {
+  if (ourConfig.apIsActive || WiFi.status() != WL_CONNECTED) {
     Serial.print("Starting WiFi Access Point with  SSID: ");
     Serial.println(ourConfig.apSsid);
     //ESP32 As access point IP: 192.168.4.1
@@ -523,7 +531,8 @@ void setupWiFi() {
       Serial.print(ourConfig.apSsid);
       Serial.print(", PW: ");
       Serial.print(ourConfig.apPasswd);
-      Serial.println(", Address: http://192.168.4.1");
+      Serial.print(", Address: http://");
+      Serial.println(myIP);
     }
   }
 }
@@ -541,6 +550,9 @@ void showConfig(const char* aContext) {
   Serial.print("wlanPasswd          = "); Serial.println(ourConfig.wlanPasswd);
   Serial.print("apSsid              = "); Serial.println(ourConfig.apSsid);
   Serial.print("apPasswd            = "); Serial.println(ourConfig.apPasswd);
+  for (int i=0; i<CONFIG_SERVO_PRESET_L; i++) {
+    Serial.println(String("servoPresets[")+i+"]     = " + ourConfig.servoPresets[i]);
+  }
 }
 
 void setDefaultConfig() {
@@ -554,6 +566,11 @@ void setDefaultConfig() {
   strncpy(ourConfig.wlanPasswd, "", CONFIG_PASSW_L);
   strncpy(ourConfig.apSsid , "UHU", CONFIG_SSID_L);
   strncpy(ourConfig.apPasswd, "12345678", CONFIG_PASSW_L);
+
+  for (int i=0; i<CONFIG_SERVO_PRESET_L; i++) {
+    ourConfig.servoPresets[i] = -100 + i*50;
+  }
+
   saveConfig();
 }
 
