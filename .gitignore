@@ -47,3 +47,4 @@ tmp/*
 doc/html
 doc/html/*
 libraries/*
+html/*

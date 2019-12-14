@@ -55,9 +55,7 @@ Die Bedienung am Web-GUI ist denkbar einfach. Die Servo-Position kann
 über zwei Eingabefelder prozentual oder als Impulsbreite gesteuert
 werden. Zusätzlich kann die Servoposition über ein Slider-Widget
 gesteuert werden. Es sind für diverse Aufgaben noch 5 vordefinierte und
-einstellbare (Save) Positions-Buttons
-verfügbar.
-
+einstellbare (Save) Positions-Buttons verfügbar.
 ![Web-GUI](https://raw.githubusercontent.com/Pulsar07/ServoController/master/doc/img/SC_GUI.png)
 
 ## <span id="hmi_subsec_de_ib" class="anchor"></span> Inbetriebnahme
@@ -73,9 +71,19 @@ verfügbar.
         Dazu stellt der Sensor per WiFi einen Accesspoint mit der SSID
         "UHU" und Kennwort "12345678" zur Verfügung. Ist das Gerät mit
         diesem WLAN verbunden, kann im Web-Browser über die Adresse
-        <http://192.168.4.1> die Benutzeroberfläche benutzt und der
-        Sensor konfiguriert werden. Sowohl obige SSID als auch das
-        Kennwort können danach geändert werden.
+        <http://192.168.4.1> oder einfacher über <http://uhu.local> die
+        Benutzeroberfläche benutzt und der Sensor konfiguriert werden.
+        Sowohl obige SSID als auch das Kennwort können danach geändert
+        werden.  
+        Achtung: Bei einigen Smartphones wird mit der Verbindung zu
+        einem WLAN ohne Internetverbindung versucht über das Mobil-Netz
+        zu arbeiten, was es unmöglich macht die Sensor-Seite aufzubauen.
+        Um dieses Problem zu beheben, einfach die Mobilen-Daten kurz
+        abschalten.
+      - Auf der Einstellseite kann das hersteller spezifische Verhalten,
+        bzgl. der Maximalwerte, der prozentualen Werte und des 0-Punktes
+        für die Systeme: Jeti, HoTT, Spektrum, Futaba, Taranis, MPX oder
+        mit eigenen Werte (Custom) eingestellt werden.
       - Auf der Einstellseite kann eine SSID und ein Kennwort für ein
         WLAN (WLAN-Client) konfiguriert werden, mit dem sich der Sensor
         verbinden. Dabei wird dem Sensor eine IP-Adresse zugewiesen, die

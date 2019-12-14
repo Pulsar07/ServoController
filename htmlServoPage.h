@@ -1,7 +1,9 @@
-const char MAIN_page[] PROGMEM = R"=====(
+const char SERVO_page[] PROGMEM = R"=====(
   <!DOCTYPE html>
   <html>
   <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=0.5>
     <meta http-equiv="cache-control" content="no-cache, must-revalidate, post-check=0, pre-check=0" />
     <meta http-equiv="cache-control" content="max-age=0" />
     <meta http-equiv="expires" content="0" />
@@ -23,10 +25,10 @@ const char MAIN_page[] PROGMEM = R"=====(
     <div class="col-left">
       <label> </label>
     </div>
-    <div class="col-small">
+    <div class="col-double">
       <label>PWM-Impulsbreite</label>
     </div>
-    <div class="col-small">
+    <div class="col-double">
       <label>Prozent</label>
     </div>
   </div>
@@ -34,10 +36,10 @@ const char MAIN_page[] PROGMEM = R"=====(
     <div class="col-left">
       <label>Servoweg in :</label>
     </div>
-    <div class="col-small">
-      <label class=measureValue>  <span id="id_pwm_value">0</span>ms</label>
+    <div class="col-double">
+      <label class=measureValue>  <span id="id_pwm_value">0</span>&micro;s</label>
     </div>
-    <div class="col-small">
+    <div class="col-double">
       <label class=measureValue>  <span id="id_percent_value">0</span>%</label>
     </div>
   </div>
@@ -45,13 +47,13 @@ const char MAIN_page[] PROGMEM = R"=====(
     <div class="col-left">
       <label> modifizieren :</label>
     </div>
-    <div class="col-small">
+    <div class="col-double">
       <input type="number" class=measureInput id="id_pwm_setvalue" onchange="sendNameValue(this.id, this.value)"
-         style="width: 6em" maxlength="4" min="750" max="2250" step="1" value="1500"></input><span class=measureInput>ms</span>
+         style="width: 6em" maxlength="4" min="750" max="2250" step="1" value="1500"><span class=measureInput>&micro;s</span>
     </div>
-    <div class="col-small">
+    <div class="col-double">
       <input type="number" class=measureInput id="id_percent_setvalue" onchange="sendNameValue(this.id, this.value)"
-         style="width: 6em" maxlength="3" min="-125" max="+125" step="1" value="0"></input><span class=measureInput>%</span>
+         style="width: 6em" maxlength="3" min="-125" max="+125" step="1" value="0"><span class=measureInput>%</span>
     </div>
   </div>
   <div class="row">
@@ -63,8 +65,7 @@ const char MAIN_page[] PROGMEM = R"=====(
         <input type="range" min="-125" max="125" value="0" 
           class="slider" id="id_pos_slider"
           onchange="sendNameValue(this.id, this.value)"
-          oninput="sendNameValue(this.id, this.value)"
-        >
+          oninput="sendNameValue(this.id, this.value)">
       </div>
     </div>
   </div>
@@ -107,6 +108,22 @@ const char MAIN_page[] PROGMEM = R"=====(
         onclick="sendNameValue(this.id, this.name)">Save</a>
     </div>
   </div>
+  <div class="row">
+    <div class="col-left">
+      <label>hertellerspezifische<br>Einstellungen :</label>
+    </div>
+    <div class="col-large">
+      <label>
+          <span id="id_vendor_settings">?</span>
+	  (
+	  min: <span id="id_pulse_width_min">?</span>&micro;s/
+	  -100%: <span id="id_pulse_width_max">?</span>&micro;s/
+	  +100%: <span id="id_pulse_width_n100">?</span>&micro;s/
+	  max: <span id="id_pulse_width_p100">?</span>&micro;s
+	  )
+      </label>
+    </div>
+  </div>
   <hr>
   <div class="row">
     <div class="col-left">
@@ -124,7 +141,8 @@ const char MAIN_page[] PROGMEM = R"=====(
   <script>
   getData("id_pwm_value", "id_percent_value", "id_pwm_setvalue", "id_percent_setvalue", "id_pos_slider",
     "id_load_pos_1", "id_load_pos_2", "id_load_pos_3", "id_load_pos_4", "id_load_pos_5",
-    "id_version"
+    "id_pulse_width_min", "id_pulse_width_max", "id_pulse_width_p100", "id_pulse_width_n100", 
+    "id_vendor_settings", "id_version"
   );
   </script>
   </body>

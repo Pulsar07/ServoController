@@ -10,22 +10,29 @@ const char CSS[] PROGMEM = R"=====(
 
     input[type=text], select, textarea {
       width: 100%;
-      padding: 12px;
+      padding: 5px;
       border: 1px solid #ccc;
       border-radius: 4px;
       resize: vertical;
     }
 
-    input[type=checkbox], input[type=radio] {
-      margin: 10px 12px 10px 15px;
-      display: inline-block;
+    input[type=checkbox].config, input[type=radio].config, input[type=number].config {
+      margin: 5px 12px 5px 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      display: block;
     }
 
     label {
       padding: 6px 12px 6px 0;
-      display: inline-block;
+      display: block;
     }
 
+    label.input {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      display: inline-block;
+    }
     input[type=submit] {
       background-color: #4CAF50;
       color: white;
@@ -58,12 +65,12 @@ const char CSS[] PROGMEM = R"=====(
       font-size: 1.5em;
       font-weight:bold;
     }
-	
+
     .measureInput {
       font-size: 1.3em;
       font-weight:bold;
     }
-	
+
     .version {
       text-align: right;
     }
@@ -71,15 +78,27 @@ const char CSS[] PROGMEM = R"=====(
     .col-large {
       text-align: left;
       float: right;
-      width: 75%;
+      width: 65%;
+      padding-left: 5px;
+    }
+
+    .col-large input[type=number] {
+      width: 5em;
+    }
+
+    .col-double {
+      text-align: center;
+      float: left;
+      width: 30%;
       padding-left: 5px;
     }
 
     .col-small {
       text-align: center;
       float: left;
-      width: 30%;
+      width: 32.5%;
       padding-left: 5px;
+      background-color: #ccc;
     }
 
     .col-left {
@@ -122,24 +141,28 @@ const char CSS[] PROGMEM = R"=====(
     a.c_button:hover {
       opacity: 1;
     }
-     
+
     /* Responsive layout - when the screen is less than 600px wide, make the two columns stack on top of each other instead of next to each other
-    */
     @media screen and (max-width: 600px) {
-      .col-small, .col-left, input[type=submit] {
+    */
+    @media (max-aspect-ratio: 8/5) {
+      body {
+        background: #66f;
+      }
+
+      .col-small, .col-double, .col-left, .col-large, input[type=submit], input[type=number] {
+        text-align: left;
         width: 100%;
         margin-top: 0;
       }
-      .col-left {
-        text-align: left;
-      }
+
       h2, h3, h4, p {
         padding: 0px 0px 0px 0px;
       }
 
       a.c_button{
        display:block;
-       margin:0.2em auto;
+       margin:0.2em;
       }
     }
 

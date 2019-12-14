@@ -1,6 +1,20 @@
 const char SCRIPT[] PROGMEM = R"=====(
   <script>
 
+  function setClassElementsReadonly(aClassname, aValue) {
+    var elements = document.getElementsByClassName(aClassname);
+    // console.log("found elements: " + elements.length);
+    for (var i = 0; i < elements.length; i++) {
+      var val = true;
+      if (aValue == "false") {
+        val = false;
+      } 
+      // console.log("setting " + elements[i].id + " to readonly = " + val);
+      elements[i].readOnly = val;
+      elements[i].disabled = val;
+    }
+  }
+
   function setElementValue(aId, aValue) {
     var htmlElement = document.getElementById(aId);
     htmlElement.innerHTML = aValue;
@@ -24,6 +38,7 @@ const char SCRIPT[] PROGMEM = R"=====(
   }
 
   function sendNameValue(aId, aValue) {
+    // console.log("sendNameValue(" + aId + ", " + aValue + ")");
     if (aValue == "NA") {
         aValue=document.getElementById(aId).value;
     }
@@ -38,14 +53,14 @@ const char SCRIPT[] PROGMEM = R"=====(
   function parseResponse(aResponse) {
       if (aResponse.readyState == 4 && aResponse.status == 200) {
         var responseValues = aResponse.responseText.split(";");
-        console.log("responseValues.length:" + responseValues.length);
+        // console.log("responseValues.length:" + responseValues.length);
         for (var i = 0; i < responseValues.length; i++) {
           var element = responseValues[i].split("=");
           var elementId = element[0];
-          console.log("elementId:" + elementId);
-          console.log("elementValue:" + elementValue);
+          // console.log("elementId:" + elementId);
           if (elementId == "") { break }
           var elementValue = element[1];
+          // console.log("elementValue:" + elementValue);
           var htmlElement = document.getElementById(elementId);
           if (htmlElement.type == "radio") {
              htmlElement.checked = true;
@@ -57,8 +72,20 @@ const char SCRIPT[] PROGMEM = R"=====(
             htmlElement.value = elementValue;
           } else if (htmlElement.type == "range") {
             htmlElement.value = elementValue;
+            if (element.length > 3) {
+              // console.log("min :" + element[2]);
+              htmlElement.min = element[2];
+              // console.log("max :" + element[3]);
+              htmlElement.max = element[3];
+            }
           } else if (htmlElement.type == "number") {
             htmlElement.value = elementValue;
+            if (element.length > 3) {
+              // console.log("min :" + element[2]);
+              htmlElement.min = element[2];
+              // console.log("max :" + element[3]);
+              htmlElement.max = element[3];
+            }
           } else {
             htmlElement.innerHTML = elementValue;
           }
@@ -68,6 +95,7 @@ const char SCRIPT[] PROGMEM = R"=====(
 
   function getData() {
     var xhttp = new XMLHttpRequest();
+    xhttp.timeout = 2000;
     xhttp.onreadystatechange = function() {
       parseResponse(this);
     };
@@ -79,5 +107,6 @@ const char SCRIPT[] PROGMEM = R"=====(
     xhttp.open("GET", requestLocation, true);
     xhttp.send();
   }
+
   </script>
 )=====";
