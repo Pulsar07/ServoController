@@ -856,7 +856,6 @@ void printConfig(const char* aContext) {
 void setDefaultConfig() {
   Serial.println("setDefaultConfig()");
   // Reset EEPROM bytes to '0' for the length of the data structure
-  printConfig("setDefaultConfig() - old data:");
   strncpy(ourConfig.version , CONFIG_VERSION, CONFIG_VERSION_L);
   ourConfig.servoInversion = false;
   ourConfig.apIsActive=true;
