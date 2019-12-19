@@ -381,7 +381,7 @@ void setupWebServer() {
 }
 
 void HTMLservoPage() {
-  Serial.print(server.client().remoteIP().toString());
+  // Serial.print(server.client().remoteIP().toString());
   Serial.println(" : HTMLservoPage()");
   checkHTMLArguments();
   String s = FPSTR(SERVO_page); //Read HTML contents
@@ -391,7 +391,7 @@ void HTMLservoPage() {
 }
 
 void HTMLadminPage() {
-  Serial.print(server.client().remoteIP().toString());
+  // Serial.print(server.client().remoteIP().toString());
   Serial.println(" : HTMLadminPage()");
   String s = FPSTR(ADMIN_page); //Read HTML contents
   s.replace("###<SCRIPT>###", FPSTR(SCRIPT));
@@ -420,7 +420,7 @@ String createDynValueResponse(String aIdForcingValue) {
 }
 
 void setDataReq() {
-  Serial.print(server.client().remoteIP().toString());
+  // Serial.print(server.client().remoteIP().toString());
   Serial.println(" : setDataReq()");
   String name = server.arg("name");
   String value = server.arg("value");
