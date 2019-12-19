@@ -20,7 +20,7 @@
 //         preset button values now stored with "SAVE" in config page
 // V0.12 : now several vendor specific PWM settings + custom values supported in config
 // V0.13 : - support servo move by mouse wheel
-//         - support setting of servo limit (safety setting for mechanical limits) 
+//         - support setting of servo limit (safety setting for mechanical limits)
 #define APP_VERSION "V0.13"
 
 /**
@@ -81,14 +81,14 @@
  *  * Der Sensor muss zuerst mit Smartphone oder PC verbunden werden. Dazu stellt
  * der Sensor per WiFi einen Accesspoint mit der SSID "UHU" und Kennwort "12345678"
  * zur Verfügung. Ist das Gerät mit diesem WLAN verbunden, kann im Web-Browser
- * über die Adresse http://192.168.4.1 oder einfacher über http://uhu.local die 
- * Benutzeroberfläche benutzt und der Sensor 
+ * über die Adresse http://192.168.4.1 oder einfacher über http://uhu.local die
+ * Benutzeroberfläche benutzt und der Sensor
  * konfiguriert werden. Sowohl obige SSID als auch das Kennwort können danach geändert werden.
- * <br>Achtung: Bei einigen Smartphones wird mit der Verbindung zu einem WLAN ohne Internetverbindung versucht über das 
- * Mobil-Netz zu arbeiten, was es unmöglich macht die Sensor-Seite aufzubauen. Um dieses Problem zu beheben, 
+ * <br>Achtung: Bei einigen Smartphones wird mit der Verbindung zu einem WLAN ohne Internetverbindung versucht über das
+ * Mobil-Netz zu arbeiten, was es unmöglich macht die Sensor-Seite aufzubauen. Um dieses Problem zu beheben,
  * einfach die Mobilen-Daten kurz abschalten.
- *  * Auf der Einstellseite kann das hersteller spezifische Verhalten, bzgl. der Maximalwerte, der prozentualen Werte und des 0-Punktes 
- * für die Systeme: Jeti, HoTT, Spektrum, Futaba, Taranis, MPX oder mit eigenen Werte (Custom) eingestellt werden. 
+ *  * Auf der Einstellseite kann das hersteller spezifische Verhalten, bzgl. der Maximalwerte, der prozentualen Werte und des 0-Punktes
+ * für die Systeme: Jeti, HoTT, Spektrum, Futaba, Taranis, MPX oder mit eigenen Werte (Custom) eingestellt werden.
  *  * Auf der Einstellseite kann eine SSID und ein Kennwort für ein WLAN (WLAN-Client)
  * konfiguriert werden, mit dem sich der Sensor verbinden. Dabei wird dem Sensor
  * eine IP-Adresse zugewiesen, die am WLAN-Router abgefragt werden muss. Änderungen
@@ -177,7 +177,7 @@ void initConfig() {
 }
 
 void initServoControllerConfig() {
-  
+
   if (ourConfig.servoRangeByVendor < 0 || ourConfig.servoRangeByVendor > custom) {
     ourConfig.servoRangeByVendor = jeti;
   }
@@ -424,7 +424,7 @@ void setupWebServer() {
 }
 
 void HTMLservoPage() {
-  Serial.print(server.client().remoteIP().toString());
+  // Serial.print(server.client().remoteIP().toString());
   Serial.println(" : HTMLservoPage()");
   checkHTMLArguments();
   String s = FPSTR(SERVO_page); //Read HTML contents
@@ -434,7 +434,7 @@ void HTMLservoPage() {
 }
 
 void HTMLadminPage() {
-  Serial.print(server.client().remoteIP().toString());
+  // Serial.print(server.client().remoteIP().toString());
   Serial.println(" : HTMLadminPage()");
   String s = FPSTR(ADMIN_page); //Read HTML contents
   s.replace("###<SCRIPT>###", FPSTR(SCRIPT));
@@ -463,6 +463,8 @@ String createDynValueResponse(String aIdForcingValue) {
 }
 
 void setDataReq() {
+  Serial.print(server.client().remoteIP().toString());
+  Serial.println(" : setDataReq()");
   String name = server.arg("name");
   String value = server.arg("value");
   #ifdef DO_LOG
@@ -538,7 +540,7 @@ void setDataReq() {
         ourServoLimit[MAX_IDX] = ourConfig.servoPulseWidthPairFullRange[MAX_IDX];
         response += String("id_limit_max") + "=" + "Limit;";
       }
-    } 
+    }
   } else
   if ( name.startsWith("id_store_")) {
     int pos = name.substring(9).toInt();
@@ -995,7 +997,6 @@ void printConfig(const char* aContext) {
 void setDefaultConfig() {
   Serial.println("setDefaultConfig()");
   // Reset EEPROM bytes to '0' for the length of the data structure
-  // printConfig("setDefaultConfig() - old data:");
   strncpy(ourConfig.version , CONFIG_VERSION, CONFIG_VERSION_L);
   ourConfig.servoInversion = false;
   ourConfig.apIsActive=true;
