@@ -21,7 +21,8 @@
 // V0.12 : now several vendor specific PWM settings + custom values supported in config
 // V0.13 : - support servo move by mouse wheel
 //         - support setting of servo limit (safety setting for mechanical limits)
-#define APP_VERSION "V0.13"
+// V0.13a : - servo inverion but fixed
+#define APP_VERSION "V0.13a"
 
 /**
  * \file ServoControl.ino
@@ -254,7 +255,15 @@ void printServoRanges() {
 }
 
 void moveServo() {
-  ourServo.writeMicroseconds(get_pwm_value() * ourServoDirection);
+  int16_t pos = get_pwm_value();
+  if (ourServoDirection == -1 ) {
+    pos = -pos 
+      +  (ourConfig.servoPulseWidthPairFullRange[MIN_IDX] 
+      +   ourConfig.servoPulseWidthPairFullRange[MAX_IDX] );
+  } 
+  // Serial.print("moveServo: ");
+  // Serial.println(pos);
+  ourServo.writeMicroseconds(pos);
 }
 
 int16_t toPercentage(int16_t aMicroSeconds) {
@@ -299,8 +308,6 @@ void set_percent_value(int16_t aPercentValue) {
 }
 
 int16_t get_pwm_value() {
-  // Serial.println(" get_pwm_value: ");
-  // showServoPos();
   return ourServoPos;
 }
 
