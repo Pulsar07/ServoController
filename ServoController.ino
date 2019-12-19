@@ -12,12 +12,16 @@
 #include "htmlCSS.h"
 #include "Config.h"
 
+// #define DO_LOG
+
 // Version history
 // V0.10 : full functional initial version
 // V0.11 : bug with deactivated AP and config data fixed
 //         preset button values now stored with "SAVE" in config page
 // V0.12 : now several vendor specific PWM settings + custom values supported in config
-#define APP_VERSION "V0.12"
+// V0.13 : - support servo move by mouse wheel
+//         - support setting of servo limit (safety setting for mechanical limits) 
+#define APP_VERSION "V0.13"
 
 /**
  * \file ServoControl.ino
@@ -112,8 +116,12 @@ static unsigned long ourTriggerRestart = 0;
 
 const int SERVO_PIN = D7;
 
-Servo servo;
-static int16_t ourServoPos;
+Servo ourServo;
+int16_t ourServoPos;
+int8_t ourServoDirection = 1;
+boolean ourWheelActivation = false;
+uint8_t ourWheelFactor = 1;
+int ourServoLimit[2];
 
 ESP8266WebServer server(80);    // Server Port  hier einstellen
 
@@ -182,13 +190,12 @@ void initServoControllerConfig() {
 void initServo() {
   Serial.print("Servo connected to: ");
   Serial.println(SERVO_PIN);
-  servo.attach(SERVO_PIN,
-    ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN],
-    ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX]);
-  ourServoPos =
-    (ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN] +
-     ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX]) /2;
-  servo.writeMicroseconds(ourServoPos);
+  ourServo.attach(SERVO_PIN,
+    ourConfig.servoPulseWidthPairFullRange[MIN_IDX],
+    ourConfig.servoPulseWidthPairFullRange[MAX_IDX]);
+  set_pwm_value((ourConfig.servoPulseWidthPairFullRange[MIN_IDX] +
+     ourConfig.servoPulseWidthPairFullRange[MAX_IDX]) /2);
+  ourServo.writeMicroseconds(get_pwm_value());
 
   // check and reset servo preset values if not valid initialized
   for (int i=0; i<CONFIG_SERVO_PRESET_L; i++) {
@@ -201,76 +208,78 @@ void initServo() {
 void initServoRangeSettings(rc_vendor_t aVendor) {
   switch (aVendor) {
   case jeti:
-    ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN] = 750;
-    ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX] = 2250;
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MIN] = 1000;
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MAX] = 2000;
+    ourConfig.servoPulseWidthPairFullRange[MIN_IDX] = 750;
+    ourConfig.servoPulseWidthPairFullRange[MAX_IDX] = 2250;
+    ourConfig.servoPulseWidthPair100Percent[MIN_IDX] = 1000;
+    ourConfig.servoPulseWidthPair100Percent[MAX_IDX] = 2000;
     break;
   case futaba:
-    ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN] = 920;
-    ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX] = 2150;
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MIN] = 960;
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MAX] = 2080;
+    ourConfig.servoPulseWidthPairFullRange[MIN_IDX] = 920;
+    ourConfig.servoPulseWidthPairFullRange[MAX_IDX] = 2150;
+    ourConfig.servoPulseWidthPair100Percent[MIN_IDX] = 960;
+    ourConfig.servoPulseWidthPair100Percent[MAX_IDX] = 2080;
     break;
   case hott:
   case spektrum:
-    ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN] = 900;
-    ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX] = 2100;
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MIN] = 1100;
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MAX] = 1900;
+    ourConfig.servoPulseWidthPairFullRange[MIN_IDX] = 900;
+    ourConfig.servoPulseWidthPairFullRange[MAX_IDX] = 2100;
+    ourConfig.servoPulseWidthPair100Percent[MIN_IDX] = 1100;
+    ourConfig.servoPulseWidthPair100Percent[MAX_IDX] = 1900;
     break;
   case taranis:
-    ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN] = 732;
-    ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX] = 2268;
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MIN] = 988;
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MAX] = 2012;
+    ourConfig.servoPulseWidthPairFullRange[MIN_IDX] = 732;
+    ourConfig.servoPulseWidthPairFullRange[MAX_IDX] = 2268;
+    ourConfig.servoPulseWidthPair100Percent[MIN_IDX] = 988;
+    ourConfig.servoPulseWidthPair100Percent[MAX_IDX] = 2012;
     break;
   case multiplex:
-    ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN] = 750;
-    ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX] = 2250;
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MIN] = 950;
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MAX] = 2050;
+    ourConfig.servoPulseWidthPairFullRange[MIN_IDX] = 750;
+    ourConfig.servoPulseWidthPairFullRange[MAX_IDX] = 2250;
+    ourConfig.servoPulseWidthPair100Percent[MIN_IDX] = 950;
+    ourConfig.servoPulseWidthPair100Percent[MAX_IDX] = 2050;
     break;
   default: // custom
     break;
   }
+  ourServoLimit[MIN_IDX] = ourConfig.servoPulseWidthPairFullRange[MIN_IDX];
+  ourServoLimit[MAX_IDX] = ourConfig.servoPulseWidthPairFullRange[MAX_IDX];
   printServoRanges();
 }
 
 void printServoRanges() {
-  Serial.print("FullRange[PW_IDX_MIN]"); Serial.println(ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN]);
-  Serial.print("FullRange[PW_IDX_MAX]"); Serial.println(ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX]);
-  Serial.print("100Percent[PW_IDX_MAX]"); Serial.println(ourConfig.servoPulseWidthPair100Percent[PW_IDX_MIN]);
-  Serial.print("100Percent[PW_IDX_MIM]"); Serial.println(ourConfig.servoPulseWidthPair100Percent[PW_IDX_MAX]);
+  Serial.print("FullRange[MIN_IDX]"); Serial.println(ourConfig.servoPulseWidthPairFullRange[MIN_IDX]);
+  Serial.print("FullRange[MAX_IDX]"); Serial.println(ourConfig.servoPulseWidthPairFullRange[MAX_IDX]);
+  Serial.print("100Percent[MAX_IDX]"); Serial.println(ourConfig.servoPulseWidthPair100Percent[MIN_IDX]);
+  Serial.print("100Percent[CFG_MIN]"); Serial.println(ourConfig.servoPulseWidthPair100Percent[MAX_IDX]);
 }
 
 void moveServo() {
-  servo.writeMicroseconds(ourServoPos);
+  ourServo.writeMicroseconds(get_pwm_value() * ourServoDirection);
 }
 
 int16_t toPercentage(int16_t aMicroSeconds) {
-  Serial.print(" toPercentage: ");
-  Serial.print(aMicroSeconds);
-  Serial.print(" return: ");
+  // Serial.print(" toPercentage: ");
+  // Serial.print(aMicroSeconds);
+  // Serial.print(" return: ");
   int16_t retVal;
   retVal = map(aMicroSeconds,
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MIN],
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MAX],
+    ourConfig.servoPulseWidthPair100Percent[MIN_IDX],
+    ourConfig.servoPulseWidthPair100Percent[MAX_IDX],
     -100, +100);
-  Serial.println(retVal);
+  // Serial.println(retVal);
   return retVal;
 }
 
 int16_t toMicroSeconds(int16_t aPercent) {
-  Serial.print(" toMicroSeconds: ");
-  Serial.print(aPercent);
-  Serial.print(" return: ");
+  // Serial.print(" toMicroSeconds: ");
+  // Serial.print(aPercent);
+  // Serial.print(" return: ");
   int16_t retVal;
   retVal = map(aPercent,
     -100, +100,
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MIN],
-    ourConfig.servoPulseWidthPair100Percent[PW_IDX_MAX]);
-  Serial.println(retVal);
+    ourConfig.servoPulseWidthPair100Percent[MIN_IDX],
+    ourConfig.servoPulseWidthPair100Percent[MAX_IDX]);
+  // Serial.println(retVal);
   return retVal;
 }
 
@@ -279,32 +288,63 @@ int16_t get_percent_value(int16_t aPWMValue) {
 }
 
 int16_t get_percent_value() {
-  Serial.println(" get_percent_value: ");
+  // Serial.println(" get_percent_value: ");
   return get_percent_value(get_pwm_value());
 }
 
 void set_percent_value(int16_t aPercentValue) {
-  Serial.print(" set_percent_value: ");
   set_pwm_value(toMicroSeconds(aPercentValue));
-  showServoPos();
+  // Serial.print(" set_percent_value: ");
+  // showServoPos();
 }
 
 int16_t get_pwm_value() {
-  Serial.println(" get_pwm_value: ");
-  showServoPos();
+  // Serial.println(" get_pwm_value: ");
+  // showServoPos();
   return ourServoPos;
 }
 
 void set_pwm_value(int16_t aValue) {
+  if (aValue > ourServoLimit[MAX_IDX]) {
+    ourServoPos = ourServoLimit[MAX_IDX];
+    #ifdef DO_LOG
+    Serial.print("++");
+    #endif
+  } else if (aValue < ourServoLimit[MIN_IDX]) {
+    ourServoPos = ourServoLimit[MIN_IDX];
+    #ifdef DO_LOG
+    Serial.print("--");
+    #endif
+  } else if (aValue > ourConfig.servoPulseWidthPairFullRange[MAX_IDX]) {
+    ourServoPos = ourConfig.servoPulseWidthPairFullRange[MAX_IDX];
+    #ifdef DO_LOG
+    Serial.print("+");
+    #endif
+  } else if (aValue < ourConfig.servoPulseWidthPairFullRange[MIN_IDX]) {
+    ourServoPos = ourConfig.servoPulseWidthPairFullRange[MIN_IDX];
+    #ifdef DO_LOG
+    Serial.print("-");
+    #endif
+  } else {
+    #ifdef DO_LOG
+    Serial.print(".");
+    #endif
+    ourServoPos = aValue;
+  }
+  #ifdef DO_LOG
   Serial.print(" set_pwm_value: ");
-  ourServoPos = aValue;
+  Serial.print(aValue);
+  Serial.print("/");
+  Serial.println(ourServoPos);
+  Serial.print(" set_pwm_value: ");
   showServoPos();
+  #endif
 }
 
 
 void showServoPos() {
   Serial.print(" servo pos: ");
-  Serial.print(ourServoPos);
+  Serial.print(get_pwm_value());
   Serial.print("us");
   Serial.println();
 }
@@ -327,12 +367,16 @@ void storePreset(uint8_t aNum){
  * load the stored preset value given by aNum
  */
 void loadPreset(uint8_t aNum) {
-  Serial.print(" loadPreset: ");
+  Serial.print(" loadPreset[");
+  Serial.print(aNum);
+  Serial.print("]: ");
   if (aNum < CONFIG_SERVO_PRESET_L) {
     set_pwm_value(getPreset(aNum));
     Serial.print(toPercentage(getPreset(aNum)));
     Serial.print("/");
     Serial.print(getPreset(aNum));
+  } else {
+    Serial.print(" !! error idx preset");
   }
   Serial.println();
 }
@@ -374,7 +418,6 @@ void setupWebServer() {
   Serial.println("HTTP Server started");
 
   // Add service to MDNS-SD
-  MDNS.addService("rainer", "tcp", 23);
   Serial.println("mDNS Service added");
 
   server.begin();               // Starte den Server
@@ -420,11 +463,13 @@ String createDynValueResponse(String aIdForcingValue) {
 }
 
 void setDataReq() {
-  Serial.print(server.client().remoteIP().toString());
-  Serial.println(" : setDataReq()");
   String name = server.arg("name");
   String value = server.arg("value");
+  #ifdef DO_LOG
+  Serial.print(server.client().remoteIP().toString());
+  Serial.println(" : setDataReq()");
   Serial.print("  "); Serial.print(name); Serial.print("="); Serial.println(value);
+  #endif
   boolean sendResponse = true;
 
   String response = "";
@@ -440,6 +485,60 @@ void setDataReq() {
   if ( name == "id_pos_slider") {
     set_percent_value(value.toInt());
     response += createDynValueResponse(name);
+  } else
+  if ( name == "id_servo_direction") {
+    if ( value == "true") {
+      ourServoDirection = -1;
+    } else {
+      ourServoDirection = 1;
+    }
+  } else
+  if ( name == "id_wheel_activate") {
+    if ( value == "true") {
+      ourWheelActivation = true;
+    } else {
+      ourWheelActivation = false;
+    }
+  } else
+  if ( name == "id_wheel_factor") {
+    ourWheelFactor = value.toInt();
+  } else
+  if ( name == "evt_wheel") {
+    if (ourWheelActivation == true) {
+      int8_t f = value.toInt() * ourWheelFactor;
+      set_percent_value(get_percent_value() - f);
+      // Serial.print("wheel: ");
+      // Serial.print(f);
+      response += createDynValueResponse("-");
+    }
+  } else
+  if ( name.startsWith("cmd_limit")) {
+    if ( value.equals("id_set_min")) {
+      ourServoLimit[MIN_IDX] = get_pwm_value();
+      response += String("id_limit_min") + "=" + toPercentage(ourServoLimit[MIN_IDX]) + "%;";
+    } else
+    if ( value.equals("id_set_max")) {
+      ourServoLimit[MAX_IDX] = get_pwm_value();
+      response += String("id_limit_max") + "=" + toPercentage(ourServoLimit[MAX_IDX]) + "%;";
+    } else
+    if ( value.equals("id_toggle_min")) {
+      if ( ourServoLimit[MIN_IDX] == ourConfig.servoPulseWidthPairFullRange[MIN_IDX]) {
+        ourServoLimit[MIN_IDX] = get_pwm_value();
+        response += String("id_limit_min") + "=" + toPercentage(ourServoLimit[MIN_IDX]) + "%;";
+      } else {
+        ourServoLimit[MIN_IDX] = ourConfig.servoPulseWidthPairFullRange[MIN_IDX];
+        response += String("id_limit_min") + "=" + "Limit;";
+      }
+    } else
+    if ( value.equals("id_toggle_max")) {
+      if ( ourServoLimit[MAX_IDX] == ourConfig.servoPulseWidthPairFullRange[MAX_IDX]) {
+        ourServoLimit[MAX_IDX] = get_pwm_value();
+        response += String("id_limit_max") + "=" + toPercentage(ourServoLimit[MAX_IDX]) + "%;";
+      } else {
+        ourServoLimit[MAX_IDX] = ourConfig.servoPulseWidthPairFullRange[MAX_IDX];
+        response += String("id_limit_max") + "=" + "Limit;";
+      }
+    } 
   } else
   if ( name.startsWith("id_store_")) {
     int pos = name.substring(9).toInt();
@@ -474,24 +573,24 @@ void setDataReq() {
       ourConfig.servoRangeByVendor = custom;
     }
     initServoRangeSettings(ourConfig.servoRangeByVendor);
-    response += String("id_pulse_width_min") + "=" + ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN] +";";
-    response += String("id_pulse_width_max") + "=" + ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX] +";";
-    response += String("id_pulse_width_n100") + "=" + ourConfig.servoPulseWidthPair100Percent[PW_IDX_MIN] + ";";
-    response += String("id_pulse_width_p100") + "=" + ourConfig.servoPulseWidthPair100Percent[PW_IDX_MAX] + ";";
+    response += String("id_pulse_width_min") + "=" + ourConfig.servoPulseWidthPairFullRange[MIN_IDX] +";";
+    response += String("id_pulse_width_max") + "=" + ourConfig.servoPulseWidthPairFullRange[MAX_IDX] +";";
+    response += String("id_pulse_width_n100") + "=" + ourConfig.servoPulseWidthPair100Percent[MIN_IDX] + ";";
+    response += String("id_pulse_width_p100") + "=" + ourConfig.servoPulseWidthPair100Percent[MAX_IDX] + ";";
     Serial.println("setting servoRangeByVendor : " + String(ourConfig.servoRangeByVendor));
   } else
   if ( name.startsWith("id_pulse_width_")) {
     if ( name.equals("id_pulse_width_min")) {
-      ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN] = value.toInt();
+      ourConfig.servoPulseWidthPairFullRange[MIN_IDX] = value.toInt();
     } else
     if ( name.equals("id_pulse_width_max")) {
-      ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX] = value.toInt();
+      ourConfig.servoPulseWidthPairFullRange[MAX_IDX] = value.toInt();
     } else
     if ( name.equals("id_pulse_width_n100")) {
-      ourConfig.servoPulseWidthPair100Percent[PW_IDX_MIN] = value.toInt();
+      ourConfig.servoPulseWidthPair100Percent[MIN_IDX] = value.toInt();
     } else
     if ( name.equals("id_pulse_width_p100")) {
-      ourConfig.servoPulseWidthPair100Percent[PW_IDX_MAX] = value.toInt();
+      ourConfig.servoPulseWidthPair100Percent[MAX_IDX] = value.toInt();
     }
     printServoRanges();
   } else
@@ -535,9 +634,11 @@ void setDataReq() {
   }
 
   if (sendResponse) {
+    #ifdef DO_LOG
     Serial.println();
     Serial.print("send response to server: ");
     Serial.println(response);
+    #endif
     server.send(htmlResponseCode, "text/plane", response); // send an valid answer
   }
 }
@@ -545,33 +646,37 @@ void setDataReq() {
 
 void getDataReq() {
   // Serial.print(server.client().remoteIP().toString());
+  #ifdef DO_LOG
   Serial.print(" : getDataReq() :");
+  #endif
   String response;
   for (uint8_t i=0; i<server.args(); i++){
     String argName = server.argName(i);
+    #ifdef DO_LOG
     Serial.println("arg :"+argName);
+    #endif
 
    //  Serial.print(argName); Serial.print(",");
 
     if (argName.equals("id_pulse_width_min")) {
-      response += argName + "=" + String(ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN]) + ";";
+      response += argName + "=" + String(ourConfig.servoPulseWidthPairFullRange[MIN_IDX]) + ";";
     } else
     if (argName.equals("id_pulse_width_max")) {
-      response += argName + "=" + String(ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX]) + ";";
+      response += argName + "=" + String(ourConfig.servoPulseWidthPairFullRange[MAX_IDX]) + ";";
     } else
     if (argName.equals("id_pulse_width_n100")) {
-      response += argName + "=" + String(ourConfig.servoPulseWidthPair100Percent[PW_IDX_MIN]) + ";";
+      response += argName + "=" + String(ourConfig.servoPulseWidthPair100Percent[MIN_IDX]) + ";";
     } else
     if (argName.equals("id_pulse_width_p100")) {
-      response += argName + "=" + String(ourConfig.servoPulseWidthPair100Percent[PW_IDX_MAX]) + ";";
+      response += argName + "=" + String(ourConfig.servoPulseWidthPair100Percent[MAX_IDX]) + ";";
     } else
     if (argName.equals("id_pwm_value")) {
       response += argName + "=" + String(get_pwm_value()) + ";";
     } else
     if (argName.equals("id_pwm_setvalue")) {
       response += argName + "=" + String(get_pwm_value())
-                  + "=" + String(ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN])
-                  + "=" + String(ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX])
+                  + "=" + String(ourConfig.servoPulseWidthPairFullRange[MIN_IDX])
+                  + "=" + String(ourConfig.servoPulseWidthPairFullRange[MAX_IDX])
                   + ";";
     } else
     if (argName.equals("id_percent_value")) {
@@ -579,14 +684,14 @@ void getDataReq() {
     } else
     if (argName.equals("id_percent_setvalue")) {
       response += argName + "=" + String(get_percent_value())
-                  + "=" + String(get_percent_value(ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN]))
-                  + "=" + String(get_percent_value(ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX]))
+                  + "=" + String(get_percent_value(ourConfig.servoPulseWidthPairFullRange[MIN_IDX]))
+                  + "=" + String(get_percent_value(ourConfig.servoPulseWidthPairFullRange[MAX_IDX]))
                   + ";";
     } else
     if (argName.equals("id_pos_slider")) {
       response += argName + "=" + String(get_percent_value())
-                  + "=" + String(get_percent_value(ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN]))
-                  + "=" + String(get_percent_value(ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX]))
+                  + "=" + String(get_percent_value(ourConfig.servoPulseWidthPairFullRange[MIN_IDX]))
+                  + "=" + String(get_percent_value(ourConfig.servoPulseWidthPairFullRange[MAX_IDX]))
                   + ";";
     } else
     if (argName.startsWith("id_load_pos_")) {
@@ -595,6 +700,21 @@ void getDataReq() {
         // response += argName + "=" + dynPosValue[pos-1].toString() + ";";
       // }
       response += argName + "=" + String(toPercentage(getPreset(pos-1))) + ";";
+    } else
+    if (argName.startsWith("id_limit_")) {
+      if (argName.equals("id_limit_min")) {
+        if ( ourServoLimit[MIN_IDX] == ourConfig.servoPulseWidthPairFullRange[MIN_IDX]) {
+          response += argName + "=" + "-Limit;";
+        } else {
+          response += argName + "=" + toPercentage(ourServoLimit[MIN_IDX]) + "%;";
+        }
+      } else {
+        if ( ourServoLimit[MAX_IDX] == ourConfig.servoPulseWidthPairFullRange[MAX_IDX]) {
+          response += argName + "=" + "Limit;";
+        } else {
+          response += argName + "=" + toPercentage(ourServoLimit[MAX_IDX]) + "%;";
+        }
+      }
     } else
     if (argName.equals("id_version")) {
       response += argName + "=" + APP_VERSION + ";";
@@ -644,11 +764,30 @@ void getDataReq() {
       if (ourConfig.apIsActive == true) {
         response += argName + "=" + "checked;";
       }
+    } else
+    if (argName.equals("id_servo_direction")) {
+      if (ourServoDirection == -1) {
+        response += argName + "=" + "checked;";
+      } else {
+        response += argName + "=" + "unchecked;";
+      }
+    } else
+    if (argName.equals("id_wheel_activate")) {
+      if (ourWheelActivation == true) {
+        response += argName + "=" + "checked;";
+      } else {
+        response += argName + "=" + "unchecked;";
+      }
+    } else
+    if (argName.equals("id_wheel_factor")) {
+      response += argName + "=" + String(ourWheelFactor) + ";";
     }
   }
+  #ifdef DO_LOG
   Serial.println();
   Serial.print("response:");
   Serial.println(response);
+  #endif
   server.send(200, "text/plane", response.c_str()); //Send the response value only to client ajax request
 }
 
@@ -847,16 +986,16 @@ void printConfig(const char* aContext) {
     Serial.println(String("servoPresets[")+i+"]        = " + ourConfig.servoPresets[i]);
   }
   Serial.print("servoRangeByVendor     = "); Serial.println(ourConfig.servoRangeByVendor);
-  Serial.print("FullRange[PW_IDX_MIN]  = "); Serial.println(ourConfig.servoPulseWidthPairFullRange[PW_IDX_MIN]);
-  Serial.print("FullRange[PW_IDX_MAX]  = "); Serial.println(ourConfig.servoPulseWidthPairFullRange[PW_IDX_MAX]);
-  Serial.print("100Percent[PW_IDX_MAX] = "); Serial.println(ourConfig.servoPulseWidthPair100Percent[PW_IDX_MIN]);
-  Serial.print("100Percent[PW_IDX_MIM] = "); Serial.println(ourConfig.servoPulseWidthPair100Percent[PW_IDX_MAX]);
+  Serial.print("FullRange[MIN_IDX]  = "); Serial.println(ourConfig.servoPulseWidthPairFullRange[MIN_IDX]);
+  Serial.print("FullRange[MAX_IDX]  = "); Serial.println(ourConfig.servoPulseWidthPairFullRange[MAX_IDX]);
+  Serial.print("100Percent[MAX_IDX] = "); Serial.println(ourConfig.servoPulseWidthPair100Percent[MIN_IDX]);
+  Serial.print("100Percent[CFG_MIN] = "); Serial.println(ourConfig.servoPulseWidthPair100Percent[MAX_IDX]);
 }
 
 void setDefaultConfig() {
   Serial.println("setDefaultConfig()");
   // Reset EEPROM bytes to '0' for the length of the data structure
-  printConfig("setDefaultConfig() - old data:");
+  // printConfig("setDefaultConfig() - old data:");
   strncpy(ourConfig.version , CONFIG_VERSION, CONFIG_VERSION_L);
   ourConfig.servoInversion = false;
   ourConfig.apIsActive=true;

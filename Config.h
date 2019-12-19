@@ -42,8 +42,8 @@ typedef enum {
 #define CONFIG_VERSION_L 5
 #define CONFIG_SSID_L 16
 #define CONFIG_PASSW_L 64
-#define PW_IDX_MIN 0
-#define PW_IDX_MAX 1
+#define MIN_IDX 0
+#define MAX_IDX 1
 
 // Types 'byte' und 'word' doesn't work!
 typedef struct {

@@ -37,16 +37,17 @@ const char SCRIPT[] PROGMEM = R"=====(
     }
   }
 
-  function sendNameValue(aId, aValue) {
-    // console.log("sendNameValue(" + aId + ", " + aValue + ")");
+  function sendNameValue(aName, aValue) {
+    // console.log("sendNameValue(" + aName + ", " + aValue + ")");
     if (aValue == "NA") {
-        aValue=document.getElementById(aId).value;
+        aValue=document.getElementById(aName).value;
     }
     var xhttp = new XMLHttpRequest();
+    xhttp.timeout = 2000;
     xhttp.onreadystatechange = function() {
       parseResponse(this);
     };
-    xhttp.open("GET", "setDataReq?name="+aId+"&value="+aValue, true);
+    xhttp.open("GET", "setDataReq?name="+aName+"&value="+aValue, true);
     xhttp.send();
   }
 
@@ -65,7 +66,11 @@ const char SCRIPT[] PROGMEM = R"=====(
           if (htmlElement.type == "radio") {
              htmlElement.checked = true;
           } else if (htmlElement.type == "checkbox") {
-             htmlElement.checked = true;
+            if (elementValue == "checked") {
+              htmlElement.checked = true;
+	    } else {
+              htmlElement.checked = false;
+	    }
           } else if (htmlElement.type == "password") {
             htmlElement.value = elementValue;
           } else if (htmlElement.type == "text") {

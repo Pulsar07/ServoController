@@ -91,6 +91,7 @@ function createHTML {
 
   for file in $htmlPages ; do
     mkdir -p $MYDIR/html
+    rm -f $MYDIR/html/*.html
     HTMLFILE="html/${file%.h}.html"
     echo "$file -> $HTMLFILE"
     head -n -1 $file | tail -n +2 >$HTMLFILE
@@ -103,7 +104,8 @@ function createHTML {
 
     sed -i '/###<CSS>###/r html/.htmlCSS' $HTMLFILE
     sed -i '/###<CSS>###/d' $HTMLFILE
-
+    # for testing copy files to dev location on local web server
+    cp $HTMLFILE /remote/netdata/www/www.intradocserver.wald/html/dev/
   done
 
 }
@@ -167,6 +169,7 @@ if [ $DOIT -eq 10 ] ; then
     echo "cleanup of temporary folders"
     rm -rf $TEMP_FOLDER
     rm -f *.ino.elf *.ino.bin *.ino.eep *.ino.hex
+    rm -f $MYDIR/html/*.html
     exit 0
 fi
 

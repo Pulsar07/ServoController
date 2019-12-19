@@ -24,7 +24,7 @@ const char ADMIN_page[] PROGMEM = R"=====(
   <div class="container">
   <h3>Servo - Einstellungen</h3>
   <div class="row">
-    <div class="col-large">
+    <div class="col-full">
       <label class="input">
         min pulse in &micro;s
         <input class="config cl_pwm_input" type="number" id="id_pulse_width_min" 
@@ -55,7 +55,7 @@ const char ADMIN_page[] PROGMEM = R"=====(
     </div>
   </div>
   <div class="row">
-    <div class="col-large">
+    <div class="col-full">
       <label class="input">
         Jeti
       <input class="config" type="radio" id="id_rcvendor_jeti" name="nm_rcvendor" value="Jeti"
@@ -101,7 +101,7 @@ const char ADMIN_page[] PROGMEM = R"=====(
   <p>&Auml;nderungen des WiFi-Einstellungen m&uuml;ssen zuerst gespeichert werden und wirken sich erst nach Neustart aus.</p>
   <h4>Zugangsdaten zur Verbindung mit WLAN:</h4>
   <div class="row">
-    <div class="col-large">
+    <div class="col-full">
       <input type="text" id="id_wlanSsid" name="ssid"
         onchange="sendNameValue(this.id, this.value)" placeholder="WLAN SSID">
     </div>
@@ -110,7 +110,7 @@ const char ADMIN_page[] PROGMEM = R"=====(
     </div>
   </div>
   <div class="row">
-    <div class="col-large">
+    <div class="col-full">
         <input type="text" id="id_wlanPasswd" name="password"
 	  onchange="sendNameValue(this.id, this.value)" placeholder="WLAN Passwort">
     </div>
@@ -123,7 +123,7 @@ const char ADMIN_page[] PROGMEM = R"=====(
   <div class="container">
     <h4>Zugangsdaten f&uuml;r AccessPoint  / 192.168.4.1 : </h4>
   <div class="row">
-    <div class="col-large">
+    <div class="col-full">
       <input class="config" type="checkbox" id="id_apActive" name="id_apActive" value="xx"
         onchange="sendNameValue(this.id, this.checked)" >
     </div>
@@ -132,7 +132,7 @@ const char ADMIN_page[] PROGMEM = R"=====(
     </div>
   </div>
    <div class="row">
-    <div class="col-large">
+    <div class="col-full">
       <input type="text" id="id_apSsid" name="apssid"
         onchange="sendNameValue(this.id, this.value)" placeholder="AccessPoint SSID">
     </div>
@@ -141,7 +141,7 @@ const char ADMIN_page[] PROGMEM = R"=====(
     </div>
   </div>
   <div class="row">
-    <div class="col-large">
+    <div class="col-full">
       <input type="text" id="id_apPasswd" name="id_apPasswd"
         onchange="sendNameValue(this.id, this.value)" placeholder="AccessPoint Passwort">
     </div>
@@ -154,7 +154,7 @@ const char ADMIN_page[] PROGMEM = R"=====(
 <hr>
   <div class="container">
   <div class="row">
-    <div class="col-large">
+    <div class="col-full">
       <button type="button" id="id_save" name="cmd_saveConfig" value="yes" onclick="sendAll(); sendNameValue(this.name, this.value)">
       Speichern</button>
     </div>
@@ -165,7 +165,7 @@ const char ADMIN_page[] PROGMEM = R"=====(
     </div>
   </div>
   <div class="row">
-    <div class="col-large">
+    <div class="col-full">
     <button type="button" id="id_reset" name="cmd_resetConfig" value="yes" onclick="sendNameValue(this.name, this.value)">
       Alles zur&uuml;cksetzten</button>
     </div>
@@ -176,7 +176,7 @@ const char ADMIN_page[] PROGMEM = R"=====(
     </div>
   </div>
   <div class="row">
-    <div class="col-large">
+    <div class="col-full">
 	    <button type="button" id="id_backToRoot" onclick="back()">Zur&uuml;ck</button>
     </div>
     <div class="col-small">
@@ -186,7 +186,7 @@ const char ADMIN_page[] PROGMEM = R"=====(
     </div>
   </div>
   <div class="row">
-    <div class="col-large">
+    <div class="col-full">
     <button type="button" id="id_mcrestart" name="cmd_mcrestart" value="yes" onclick="sendNameValue(this.name, this.value)">
       Neustart Controller</button>
     </div>

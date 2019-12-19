@@ -3,8 +3,12 @@ const char CSS[] PROGMEM = R"=====(
     * {
       box-sizing: border-box;
     }
+    canvas {
+      border: 1px solid #ccc;
+    }
 
     h2, h3, h4, p {
+      margin: 3px;
       padding: 0px 0px 0px 40px;
     }
 
@@ -33,6 +37,7 @@ const char CSS[] PROGMEM = R"=====(
       border-radius: 4px;
       display: inline-block;
     }
+
     input[type=submit] {
       background-color: #4CAF50;
       color: white;
@@ -75,21 +80,34 @@ const char CSS[] PROGMEM = R"=====(
       text-align: right;
     }
 
-    .col-large {
+    .col-declaration {
+      text-align: right;
+      float: left;
+      width: 25%;
+    }
+
+    .col-full {
       text-align: left;
       float: right;
-      width: 65%;
+      width: 75%;
       padding-left: 5px;
     }
 
-    .col-large input[type=number] {
+    .col-full input[type=number] {
       width: 5em;
     }
 
-    .col-double {
+    .col-half {
       text-align: center;
       float: left;
-      width: 30%;
+      width: 32.5%;
+      padding-left: 5px;
+    }
+
+    .col-third {
+      text-align: center;
+      float: left;
+      width: 25%;
       padding-left: 5px;
     }
 
@@ -99,12 +117,6 @@ const char CSS[] PROGMEM = R"=====(
       width: 32.5%;
       padding-left: 5px;
       background-color: #ccc;
-    }
-
-    .col-left {
-      text-align: right;
-      float: left;
-      width: 25%;
     }
 
     .row {
@@ -123,7 +135,7 @@ const char CSS[] PROGMEM = R"=====(
       display:inline-block;
       padding:0.3em 0.8em;
       margin:0 0.3em 0.3em 0;
-      width: 14.2%;
+      width: 10%;
       border-radius:2em;
       box-sizing: border-box;
       text-decoration:none;
@@ -137,83 +149,138 @@ const char CSS[] PROGMEM = R"=====(
       transition: all 0.2s;
     }
 
+    a.store {
+      background-color: #01DF01;
+    }
+
+    a.set {
+      background-color: #848484;
+    }
+
+    a.limiter {
+      background-color: #FE642E;
+    }
 
     a.c_button:hover {
       opacity: 1;
     }
 
+    .switch {
+     position: relative;
+     display: inline-block;
+     width: 60px;
+     height: 34px;
+    }
+    
+    /* Hide default HTML checkbox */
+    .switch input {
+     opacity: 0;
+     width: 0;
+     height: 0;
+    }
+    
+    .slidecontainer {
+      width: 97%;
+    }
+    
+    .slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 25px;
+      background: #d3d3d3;
+      outline: none;
+      opacity: 0.7;
+      -webkit-transition: .2s;
+      transition: opacity .2s;
+    }
+    
+    .slider:hover {
+      opacity: 1;
+    }
+    
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 25px;
+      height: 25px;
+      background: #4CAF50;
+      cursor: pointer;
+    }
+    
+    .slider::-moz-range-thumb {
+      width: 25px;
+      height: 25px;
+      background: #4CAF50;
+      cursor: pointer;
+    }
+    
+
     /* Responsive layout - when the screen is less than 600px wide, make the two columns stack on top of each other instead of next to each other
     @media screen and (max-width: 600px) {
     */
     @media (max-aspect-ratio: 8/5) {
+
       body {
         background: #66f;
       }
 
-      .col-small, .col-double, .col-left, .col-large, input[type=submit], input[type=number] {
+      /*
+      .col-small, .col-half, .col-declaration, .col-full, input[type=submit], input[type=number] {
         text-align: left;
         width: 100%;
         margin-top: 0;
       }
+      */
 
       h2, h3, h4, p {
+        margin: 3px;
         padding: 0px 0px 0px 0px;
       }
 
+      /*
       a.c_button{
        display:block;
        margin:0.2em;
       }
+      */
+
+    .slidecontainer {
+      width: 95%;
+    }
+     .slider {
+       height: 50px;
+      }
+
+    .slider::-webkit-slider-thumb {
+      height: 70px;
+    }
+    
+    .slider::-moz-range-thumb {
+      height: 70px;
     }
 
-.switch {
- position: relative;
- display: inline-block;
- width: 60px;
- height: 34px;
-}
+    a.c_button   {
+      border: 3px solid #000;
+      height: 4em;
+      writing-mode: tb-rl;
+      padding: 0px 7px 0px 7px;
+    }
 
-/* Hide default HTML checkbox */
-.switch input {
- opacity: 0;
- width: 0;
- height: 0;
-}
+    .col-declaration {
+      font-size: .7em;
+      width: 15%;
+    }
+    .col-full {
+      width: 85%;
+    }
 
-.slidecontainer {
-  width: 80%;
-}
-
-.slider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 25px;
-  background: #d3d3d3;
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
-}
-
-.slider:hover {
-  opacity: 1;
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 25px;
-  height: 25px;
-  background: #4CAF50;
-  cursor: pointer;
-}
-
-.slider::-moz-range-thumb {
-  width: 25px;
-  height: 25px;
-  background: #4CAF50;
-  cursor: pointer;
-}
+    .col-half {
+      width: 42.5%;
+    }
+    .col-third {
+      width: 28%;
+    }
+  }
 
 </style>
 )=====";
